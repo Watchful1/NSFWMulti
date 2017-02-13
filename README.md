@@ -1,0 +1,1 @@
+This is a bot that updates a multireddit of all nsfw subs that reach the top 200 of /r/all
