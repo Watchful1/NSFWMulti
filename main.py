@@ -219,6 +219,7 @@ while True:
 						"http://np.reddit.com/message/compose/?to="+str(r.user.me())+"&subject=Blacklist&message="
 						"blacklist /r/"+str(submission.subreddit)+")"
 				)
+				log.info("Sending message on added subreddit /r/"+str(submission.subreddit))
 
 	subreddits = getSubreddits(datetime.datetime.now() - datetime.timedelta(days=30))
 
