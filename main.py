@@ -47,12 +47,14 @@ def logSubreddit(subreddit):
 		WHERE Subreddit = ?
 	''', (subreddit,))
 
+	added = False
 	if result.fetchone()[0] == 0:
 		c.execute('''
 			INSERT INTO subreddits
 			(Subreddit)
 			VALUES (?)
 		''', (subreddit,))
+		added = True
 	else:
 		c.execute('''
 			UPDATE subreddits
@@ -60,6 +62,7 @@ def logSubreddit(subreddit):
 			WHERE subreddit = ?
 		''', (subreddit,))
 	dbConn.commit()
+	return added
 
 
 def getSubreddits(date):
@@ -209,7 +212,13 @@ while True:
 
 	for submission in r.subreddit('all').hot(limit=200):
 		if submission.over_18 or str(submission.subreddit).lower() in whitelist:
-			logSubreddit(str(submission.subreddit).lower())
+			if logSubreddit(str(submission.subreddit).lower()):
+				r.redditor(OWNER_NAME.lower()).message(
+					subject="Subreddit added",
+					message="/r/"+str(submission.subreddit)+" [Blacklist]("
+						"http://np.reddit.com/message/compose/?to="+str(r.user.me())+"&subject=Blacklist&message="
+						"blacklist /r/"+str(submission.subreddit)+")"
+				)
 
 	subreddits = getSubreddits(datetime.datetime.now() - datetime.timedelta(days=30))
 
