@@ -72,6 +72,8 @@ def getSubreddits(date):
 			FROM subreddits
 			WHERE LastSeen > ?
 				AND Blacklisted = 0
+			ORDER BY LastSeen DESC
+			LIMIT 100
 		''', (date.strftime("%Y-%m-%d %H:%M:%S"),))
 
 	results = []
@@ -149,7 +151,7 @@ def signal_handler(signal, frame):
 signal.signal(signal.SIGINT, signal_handler)
 
 
-dbConn = sqlite3.connect("datebase.db")
+dbConn = sqlite3.connect("database.db")
 c = dbConn.cursor()
 c.execute('''
 	CREATE TABLE IF NOT EXISTS subreddits (
@@ -222,6 +224,7 @@ while True:
 				log.info("Sending message on added subreddit /r/"+str(submission.subreddit))
 
 	subreddits = getSubreddits(datetime.datetime.now() - datetime.timedelta(days=30))
+	log.debug((datetime.datetime.now() - datetime.timedelta(days=30)).strftime("%Y-%m-%d %H:%M:%S"))
 
 	for multi in r.user.multireddits():
 		if multi.name == MULTI_NAME:
