@@ -10,6 +10,7 @@ import signal
 import sqlite3
 import datetime
 import re
+import traceback
 
 ### Config ###
 LOG_FOLDER_NAME = "logs"
@@ -197,38 +198,42 @@ while True:
 	startTime = time.perf_counter()
 	log.debug("Starting run")
 
-	for message in r.inbox.unread(limit=100):
-		if isinstance(message, praw.models.Message) and str(message.author).lower() == OWNER_NAME.lower():
-			for line in message.body.lower().splitlines():
-				subs = re.findall('(?: /r/)(\w*)', line)
-				if len(subs):
-					if line.startswith("whitelist"):
-						for sub in subs:
-							whitelistSubreddit(sub.lower())
-					if line.startswith("blacklist"):
-						for sub in subs:
-							blacklistSubreddit(sub.lower())
-			message.reply("Lists updated")
-			log.info("Message processed")
-		message.mark_read()
+	try:
+		for message in r.inbox.unread(limit=100):
+			if isinstance(message, praw.models.Message) and str(message.author).lower() == OWNER_NAME.lower():
+				for line in message.body.lower().splitlines():
+					subs = re.findall('(?: /r/)(\w*)', line)
+					if len(subs):
+						if line.startswith("whitelist"):
+							for sub in subs:
+								whitelistSubreddit(sub.lower())
+						if line.startswith("blacklist"):
+							for sub in subs:
+								blacklistSubreddit(sub.lower())
+				message.reply("Lists updated")
+				log.info("Message processed")
+			message.mark_read()
 
-	for submission in r.subreddit('all').hot(limit=200):
-		if submission.over_18 or str(submission.subreddit).lower() in whitelist:
-			if logSubreddit(str(submission.subreddit).lower()):
-				r.redditor(OWNER_NAME.lower()).message(
-					subject="Subreddit added",
-					message="/r/"+str(submission.subreddit)+" [Blacklist]("
-						"http://np.reddit.com/message/compose/?to="+str(r.user.me())+"&subject=Blacklist&message="
-						"blacklist /r/"+str(submission.subreddit)+")"
-				)
-				log.info("Sending message on added subreddit /r/"+str(submission.subreddit))
+		for submission in r.subreddit('all').hot(limit=200):
+			if submission.over_18 or str(submission.subreddit).lower() in whitelist:
+				if logSubreddit(str(submission.subreddit).lower()):
+					r.redditor(OWNER_NAME.lower()).message(
+						subject="Subreddit added",
+						message="/r/"+str(submission.subreddit)+" [Blacklist]("
+							"http://np.reddit.com/message/compose/?to="+str(r.user.me())+"&subject=Blacklist&message="
+							"blacklist /r/"+str(submission.subreddit)+")"
+					)
+					log.info("Sending message on added subreddit /r/"+str(submission.subreddit))
 
-	subreddits = getSubreddits(datetime.datetime.now() - datetime.timedelta(days=30))
-	log.debug((datetime.datetime.now() - datetime.timedelta(days=30)).strftime("%Y-%m-%d %H:%M:%S"))
+		subreddits = getSubreddits(datetime.datetime.now() - datetime.timedelta(days=30))
+		log.debug((datetime.datetime.now() - datetime.timedelta(days=30)).strftime("%Y-%m-%d %H:%M:%S"))
 
-	for multi in r.user.multireddits():
-		if multi.name == MULTI_NAME:
-			multi.update(subreddits=subreddits)
+		for multi in r.user.multireddits():
+			if multi.name == MULTI_NAME:
+				multi.update(subreddits=subreddits)
+	except Exception as err:
+		log.warning("Exception updating sidebar")
+		log.warning(traceback.format_exc())
 
 	log.debug("Run complete after: %d", int(time.perf_counter() - startTime))
 	if once:
