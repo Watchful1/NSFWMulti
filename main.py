@@ -20,7 +20,7 @@ MULTI_NAME = "topnsfw"
 LOOP_TIME = 15*60
 
 ### Logging setup ###
-LOG_LEVEL = logging.DEBUG
+LOG_LEVEL = logging.INFO
 if not os.path.exists(LOG_FOLDER_NAME):
 	os.makedirs(LOG_FOLDER_NAME)
 LOG_FILENAME = LOG_FOLDER_NAME+"/"+"bot.log"
@@ -167,7 +167,7 @@ c.execute('''
 dbConn.commit()
 
 
-log.debug("Connecting to reddit")
+log.info("Connecting to reddit")
 
 once = False
 debug = False
